@@ -70,6 +70,21 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        schedulesList = ScheduleStorage.load(this);
+        stringList.clear();
+
+        for (ScheduledTime item : schedulesList) {
+            stringList.add(item.getDateTime());
+        }
+
+        adapter.notifyDataSetChanged();
+
+        ifSchedulesListEmpty();
+    }
+
     private void ifSchedulesListEmpty() {
         if (stringList.isEmpty()) {
             tvEmptyMessage.setVisibility(View.VISIBLE);
