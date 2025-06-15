@@ -48,6 +48,7 @@ public class ScheduleStorage {
         return list;
     }
 
+    // TODO: Debera validar que la fecha no sea una fecha anterior a la actual.
     // Add a new schedule and save it
     public static void add(Context context, ScheduledTime st) {
         List<ScheduledTime> current = load(context);
