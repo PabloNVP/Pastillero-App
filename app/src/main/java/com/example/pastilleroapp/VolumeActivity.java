@@ -26,7 +26,6 @@ public class VolumeActivity extends AppCompatActivity {
 
         tvVolume = findViewById(R.id.txtVolume);
 
-        //TODO: Debe recibirlo de MQTT
         int value = 75;
         tvVolume.setText(String.valueOf(value));
     }
