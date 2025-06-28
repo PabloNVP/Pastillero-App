@@ -40,10 +40,8 @@ public class AddScheduleActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        // When user clicks "Pick Date", open date and time pickers
         btnPickDate.setOnClickListener(v -> pickDateTime());
 
-        // When user clicks "Save", store the schedule
         btnSave.setOnClickListener(v -> {
             if (finalDateTime.isEmpty()) {
                 Toast.makeText(this, "Please select a date and time", Toast.LENGTH_SHORT).show();
@@ -71,7 +69,7 @@ public class AddScheduleActivity extends AppCompatActivity {
             timePicker.show();
 
         }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
-
+        datePicker.getDatePicker().setMinDate(System.currentTimeMillis());
         datePicker.show();
     }
 }
