@@ -28,7 +28,7 @@ public class MQTTForegroundService extends Service implements MqttCallback {
     public static final String USER="BBUS-ESPZX2ACUxkzX1imwO6uDf35YUa66Y";
     public static final String PASS="BBUS-ESPZX2ACUxkzX1imwO6uDf35YUa66Y";
 
-    private static final String TOPIC_DATE = "/v1.6/devices/esp32/fecha";
+    protected static final String TOPIC_DATE = "/v1.6/devices/esp32/fecha";
     private static final String TOPIC_VOLUME = "/v1.6/devices/esp32/volume";
 
     public static final String ACTION_PUBLISH_MQTT = "com.example.pastilleroapp.mqtt.ACTION_PUBLISH_MQTT";
@@ -74,20 +74,31 @@ public class MQTTForegroundService extends Service implements MqttCallback {
         }
     }
 
+    // private Notification createNotification(String msg) {
+    //     return new NotificationCompat.Builder(this, CHANNEL_ID)
+    //         .setContentTitle("Servicio MQTT")
+    //         .setContentText(msg)
+    //         .setSmallIcon(R.drawable.ic_launcher_foreground)
+    //         .build();
+    // }
     private Notification createNotification(String msg) {
-        return new NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Servicio MQTT")
-            .setContentText(msg)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .build();
-    }
+    return new NotificationCompat.Builder(this, CHANNEL_ID)
+        .setContentTitle("MQTT")
+        .setContentText(msg)
+        .setSmallIcon(android.R.drawable.ic_dialog_info)
+        .build();
+}
 
     @SuppressLint("ForegroundServiceType")
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         createNotificationChannel();
-        startForeground(1, createNotification("Servicio MQTT activo."));
-
+        // startForeground(1, createNotification("Servicio MQTT activo."));
+        Log.d("MQTT", "Antes de crear notificación");
+        Notification notification = createNotification("Servicio MQTT activo.");
+        Log.d("MQTT", "Notificación creada");
+        startForeground(1, notification);
+        Log.d("MQTT", "startForeground ejecutado");
         startMQTT();
 
         if (intent != null && ACTION_PUBLISH_MQTT.equals(intent.getAction())) {
