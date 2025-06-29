@@ -6,6 +6,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -18,6 +19,7 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.json.JSONObject;
 
 public class MQTTForegroundService extends Service implements MqttCallback {
     private static final String CHANNEL_ID = "MQTTServiceChannel";
@@ -30,6 +32,10 @@ public class MQTTForegroundService extends Service implements MqttCallback {
 
     protected static final String TOPIC_DATE = "/v1.6/devices/esp32/fecha";
     private static final String TOPIC_VOLUME = "/v1.6/devices/esp32/volume";
+
+    public static final String VOLUME_SHARED = "volume_store";
+    public static final String LAST_VOLUME_SAVED = "last_volume";
+    public static final String ACTION_VOLUME_RECEIVED = "com.example.pastilleroapp.mqtt.MQTT_VOLUME_RECEIVED";
 
     public static final String ACTION_PUBLISH_MQTT = "com.example.pastilleroapp.mqtt.ACTION_PUBLISH_MQTT";
     public static final String EXTRA_TOPIC = "extra_topic";
@@ -139,6 +145,18 @@ public class MQTTForegroundService extends Service implements MqttCallback {
     @Override
     public void messageArrived(String topic, MqttMessage message) throws Exception {
         Log.d("MQTT", "Mensaje MQTT: " + message.toString());
+
+        JSONObject payload = new JSONObject(new String(message.getPayload()));
+        String volume = String.valueOf(payload.getInt("value"));
+
+        SharedPreferences prefs = getSharedPreferences(VOLUME_SHARED, MODE_PRIVATE);
+        prefs.edit()
+                .putString(LAST_VOLUME_SAVED, volume)
+                .apply();
+
+        Intent volumeIntent = new Intent(ACTION_VOLUME_RECEIVED);
+        volumeIntent.putExtra("volume", volume);
+        sendBroadcast(volumeIntent);
     }
 
     private void publish(String topic, String message) {
