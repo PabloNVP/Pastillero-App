@@ -1,7 +1,9 @@
 package com.example.pastilleroapp;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.hardware.Sensor;
@@ -46,6 +48,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private long lastShakeTime = 0;
     private static final int UMBRAL_SHAKE_THRESHOLD = 20;
     private static final int UMBRAL_SHAKE_TIMEOUT = 2000;
+
+    private final BroadcastReceiver timeTickReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (Intent.ACTION_TIME_TICK.equals(intent.getAction())) {
+                schedulesList = ScheduleStorage.load(MainActivity.this);
+                adapter.clear();
+                adapter.addAll(schedulesList);
+                adapter.notifyDataSetChanged();
+                ifSchedulesListEmpty();
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -116,11 +131,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         adapter.notifyDataSetChanged();
 
         ifSchedulesListEmpty();
+
+        registerReceiver(timeTickReceiver, new IntentFilter(Intent.ACTION_TIME_TICK));
     }
 
     @Override
     protected void onPause(){
         sensorManager.unregisterListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER));
+        unregisterReceiver(timeTickReceiver);
         super.onPause();
     }
 
