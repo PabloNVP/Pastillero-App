@@ -26,7 +26,6 @@ import java.util.Calendar;
 public class AddScheduleActivity extends AppCompatActivity {
     private static final  DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final ZoneId zoneId = ZoneId.of("America/Argentina/Buenos_Aires");
-    // private static final Long DELAY = 120000L;
     private static final Long TO_SECONDS = 1000L;
     private static final Long MINUTE = 60000L;
 
@@ -56,13 +55,10 @@ public class AddScheduleActivity extends AppCompatActivity {
     private void setupListeners() {
         btnPickDate.setOnClickListener(v -> pickDateTime());
 
-
         btnSave.setOnClickListener(v -> {
             if (finalDateTime.isEmpty()) {
                 Toast.makeText(this, "Please select a date and time", Toast.LENGTH_SHORT).show();
             } else {
-                ScheduledTime newTime = new ScheduledTime(finalDateTime);
-                ScheduleStorage.add(this, newTime);
                 LocalDateTime dateTime = LocalDateTime.parse(finalDateTime, FORMATTER);
                 
                 long nowMillis = LocalDateTime.now(zoneId).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
@@ -78,8 +74,15 @@ public class AddScheduleActivity extends AppCompatActivity {
                         .setInitialDelay(delay - MINUTE, TimeUnit.MILLISECONDS)
                         .setInputData(inputData)
                         .build();
-
+                    String workId = workRequest.getId().toString();
+                    
+                    ScheduledTime newTime = new ScheduledTime(finalDateTime, workId);
+                    ScheduleStorage.add(this, newTime);
+                    
                     WorkManager.getInstance(this).enqueue(workRequest);
+                } else {
+                    ScheduledTime newTime = new ScheduledTime(finalDateTime);
+                    ScheduleStorage.add(this, newTime);
                 }
 
                 Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
@@ -88,7 +91,6 @@ public class AddScheduleActivity extends AppCompatActivity {
         });
     }
 
-    // Open DatePicker then TimePicker
     void pickDateTime() {
         Calendar calendar = Calendar.getInstance();
 

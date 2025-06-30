@@ -22,7 +22,10 @@ public class ScheduleStorage {
 
         JSONArray array = new JSONArray();
         for (ScheduledTime st : list) {
-            array.put(st.getDateTime());
+            JSONArray itemArray = new JSONArray();
+            itemArray.put(st.getDateTime());
+            itemArray.put(st.getWorkId() != null ? st.getWorkId() : "");
+            array.put(itemArray);
         }
 
         editor.putString(KEY_LIST, array.toString());
@@ -30,7 +33,6 @@ public class ScheduleStorage {
         editor.apply();
     }
 
-    // Load schedule list
     public static List<ScheduledTime> load(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         String json = prefs.getString(KEY_LIST, null);
@@ -41,10 +43,17 @@ public class ScheduleStorage {
             try {
                 JSONArray array = new JSONArray(json);
                 for (int i = 0; i < array.length(); i++) {
-                    String dateTime = array.getString(i);
+                    JSONArray itemArray = array.getJSONArray(i);
+                    String dateTime = itemArray.getString(0);
+                    String workId = itemArray.length() > 1 ? itemArray.getString(1) : null;
+                    
                     LocalDateTime date = LocalDateTime.parse(dateTime, FORMATTER);
                     if(!date.isBefore(now)) {
-                        list.add(new ScheduledTime(dateTime));
+                        if (workId != null && !workId.isEmpty()) {
+                            list.add(new ScheduledTime(dateTime, workId));
+                        } else {
+                            list.add(new ScheduledTime(dateTime));
+                        }
                     }
                 }
             } catch (JSONException e) {

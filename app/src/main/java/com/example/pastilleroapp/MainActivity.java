@@ -9,8 +9,8 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -22,21 +22,21 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.work.WorkManager;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements SensorEventListener {
+public class MainActivity extends AppCompatActivity implements SensorEventListener, ScheduleAdapter.OnDeleteListener {
     private static final String TAG = "MainActivity";
     private ListView lvScheduleList;
     private TextView tvEmptyMessage;
     private FloatingActionButton btnAddSchedule;
     private Button btnViewHistory;
     private List<ScheduledTime> schedulesList;
-    private List<String> stringList;
-    private ArrayAdapter<String> adapter;
+    private ScheduleAdapter adapter;
     private androidx.appcompat.widget.SwitchCompat tbSync;
 
     private static final String MAIN_SHARED = "main_store";
@@ -71,13 +71,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         tbSync.setChecked(prefs.getBoolean(SERVICE_STATE_SAVED, false));
 
         schedulesList = ScheduleStorage.load(this);
-        stringList = new ArrayList<>();
-
-        for (ScheduledTime item : schedulesList) {
-            stringList.add(item.getDateTime());
-        }
-
-        adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, stringList);
+        
+        adapter = new ScheduleAdapter(this, schedulesList, this);
         lvScheduleList.setAdapter(adapter);
 
         ifSchedulesListEmpty();
@@ -116,12 +111,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),   SensorManager.SENSOR_DELAY_NORMAL);
 
         schedulesList = ScheduleStorage.load(this);
-        stringList.clear();
-
-        for (ScheduledTime item : schedulesList) {
-            stringList.add(item.getDateTime());
-        }
-
+        adapter.clear();
+        adapter.addAll(schedulesList);
         adapter.notifyDataSetChanged();
 
         ifSchedulesListEmpty();
@@ -140,13 +131,37 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private void ifSchedulesListEmpty() {
-        if (stringList.isEmpty()) {
+        if (schedulesList.isEmpty()) {
             tvEmptyMessage.setVisibility(View.VISIBLE);
             lvScheduleList.setVisibility(View.GONE);
         } else {
             tvEmptyMessage.setVisibility(View.GONE);
             lvScheduleList.setVisibility(View.VISIBLE);
         }
+    }
+
+    @Override
+    public void onDelete(ScheduledTime item) {
+        Log.d(TAG, "Eliminando horario: " + item.getDateTime());
+        
+        // Cancel worker
+        if (item.getWorkId() != null) {
+            WorkManager.getInstance(this).cancelWorkById(java.util.UUID.fromString(item.getWorkId()));
+            Log.d(TAG, "Worker cancelado: " + item.getWorkId());
+        }
+        
+        schedulesList.remove(item);
+        
+        ScheduleStorage.save(this, schedulesList);
+        
+        // Update adapter
+        adapter.clear();
+        adapter.addAll(schedulesList);
+        adapter.notifyDataSetChanged();
+        
+        ifSchedulesListEmpty();
+        
+        Log.d(TAG, "Horario eliminado exitosamente");
     }
 
     @Override
