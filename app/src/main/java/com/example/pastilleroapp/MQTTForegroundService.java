@@ -25,10 +25,10 @@ public class MQTTForegroundService extends Service implements MqttCallback {
     private static final String CHANNEL_ID = "MQTTServiceChannel";
     private MqttClient mqttClient;
 
-    private static final String BROKER = "tcp://industrial.api.ubidots.com:1883";
+    private static final String BROKER = "tcp://3.19.87.203:1883";
     private static final String CLIENT_ID = "android_client";
-    public static final String USER="BBUS-ESPZX2ACUxkzX1imwO6uDf35YUa66Y";
-    public static final String PASS="BBUS-ESPZX2ACUxkzX1imwO6uDf35YUa66Y";
+    public static final String USER = "BBUS-ESPZX2ACUxkzX1imwO6uDf35YUa66Y";
+    public static final String PASS = "BBUS-ESPZX2ACUxkzX1imwO6uDf35YUa66Y";
 
     protected static final String TOPIC_DATE = "/v1.6/devices/esp32/fecha";
     private static final String TOPIC_VOLUME = "/v1.6/devices/esp32/volume";
@@ -48,24 +48,26 @@ public class MQTTForegroundService extends Service implements MqttCallback {
     }
 
     private void startMQTT() {
-        try {
-            MemoryPersistence persistence = new MemoryPersistence();
-
-            mqttClient = new MqttClient(BROKER, CLIENT_ID, persistence);
-
-            MqttConnectOptions options = new MqttConnectOptions();
-            options.setCleanSession(true);
-            options.setUserName(USER);
-            options.setPassword(PASS.toCharArray());
-
-            mqttClient.setCallback(this);
-
-            mqttClient.connect(options);
-            mqttClient.subscribe(TOPIC_VOLUME);
-            Log.i("MQTT", "Conexión establecida correctamente");
-        } catch (MqttException e) {
-            Log.e("MQTT", "Error al conectar: " + e.getMessage() + " Código: " + e.getReasonCode());
-        }
+        new Thread(() -> {
+            try {
+                Log.d("MQTT", "Iniciando conexión MQTT en hilo en segundo plano");
+                MemoryPersistence persistence = new MemoryPersistence();
+                mqttClient = new MqttClient(BROKER, CLIENT_ID, persistence);
+                MqttConnectOptions options = new MqttConnectOptions();
+                options.setCleanSession(true);
+                options.setUserName(USER);
+                options.setPassword(PASS.toCharArray());
+                options.setConnectionTimeout(15);
+                mqttClient.setCallback(this);
+                Log.d("MQTT", "Conectando a Ubidots...");
+                mqttClient.connect(options);
+                mqttClient.subscribe(TOPIC_VOLUME);
+                Log.i("MQTT", "OK: Conexión establecida correctamente");
+            } catch (MqttException e) {
+                Log.e("MQTT", "ERROR: Error al conectar: " + e.getMessage() + " Código: " + e.getReasonCode());
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     private void createNotificationChannel() {
@@ -80,13 +82,7 @@ public class MQTTForegroundService extends Service implements MqttCallback {
         }
     }
 
-    // private Notification createNotification(String msg) {
-    //     return new NotificationCompat.Builder(this, CHANNEL_ID)
-    //         .setContentTitle("Servicio MQTT")
-    //         .setContentText(msg)
-    //         .setSmallIcon(R.drawable.ic_launcher_foreground)
-    //         .build();
-    // }
+
     private Notification createNotification(String msg) {
     return new NotificationCompat.Builder(this, CHANNEL_ID)
         .setContentTitle("MQTT")
@@ -98,8 +94,9 @@ public class MQTTForegroundService extends Service implements MqttCallback {
     @SuppressLint("ForegroundServiceType")
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.d("MQTT", "onStartCommand llamado con intent: " + (intent != null ? intent.getAction() : "null"));
+        
         createNotificationChannel();
-        // startForeground(1, createNotification("Servicio MQTT activo."));
         Log.d("MQTT", "Antes de crear notificación");
         Notification notification = createNotification("Servicio MQTT activo.");
         Log.d("MQTT", "Notificación creada");
@@ -108,8 +105,10 @@ public class MQTTForegroundService extends Service implements MqttCallback {
         startMQTT();
 
         if (intent != null && ACTION_PUBLISH_MQTT.equals(intent.getAction())) {
+            Log.d("MQTT", "Recibido intent de publicación desde worker");
             String topic = intent.getStringExtra(EXTRA_TOPIC);
             String message = intent.getStringExtra(EXTRA_MESSAGE);
+            Log.d("MQTT", "Topic: " + topic + ", Message: " + message);
             publish(topic, message);
         }
 
@@ -160,18 +159,32 @@ public class MQTTForegroundService extends Service implements MqttCallback {
     }
 
     private void publish(String topic, String message) {
-        if (mqttClient != null && mqttClient.isConnected()) {
+        Log.d("MQTT", "Iniciando publicación: " + message + " en " + topic);
+        new Thread(() -> {
             try {
-                MqttMessage mqttMessage = new MqttMessage(message.getBytes());
-                mqttMessage.setQos(1);
-                mqttClient.publish(topic, mqttMessage);
-                Log.d("MQTT", "Publicado: " + message + " en " + topic);
+                int attempts = 0;
+                while ((mqttClient == null || !mqttClient.isConnected()) && attempts < 15) {
+                    Log.d("MQTT", "Esperando conexión MQTT... intento " + (attempts + 1));
+                    Thread.sleep(1000);
+                    attempts++;
+                }
+                if (mqttClient != null && mqttClient.isConnected()) {
+                    Log.d("MQTT", "Conexión lista, publicando mensaje...");
+                    MqttMessage mqttMessage = new MqttMessage(message.getBytes());
+                    mqttMessage.setQos(1);
+                    mqttClient.publish(topic, mqttMessage);
+                    Log.d("MQTT", "OK: Publicado exitosamente: " + message + " en " + topic);
+                } else {
+                    Log.e("MQTT", "Error: No se pudo conectar después de 15 intentos");
+                    Log.e("MQTT", "Error: Mensaje perdido: " + message + " en " + topic);
+                }
             } catch (MqttException e) {
-                Log.e("MQTT", "Error al publicar: " + e.getMessage());
+                Log.e("MQTT", "Error: Error al publicar: " + e.getMessage() + " Código: " + e.getReasonCode());
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                Log.e("MQTT", "Error en espera: " + e.getMessage());
             }
-        } else {
-            Log.e("MQTT", "Cliente no conectado, no se puede publicar.");
-        }
+        }).start();
     }
 
     @Override

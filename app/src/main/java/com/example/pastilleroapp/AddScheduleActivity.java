@@ -27,7 +27,7 @@ public class AddScheduleActivity extends AppCompatActivity {
     private static final  DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final ZoneId zoneId = ZoneId.of("America/Argentina/Buenos_Aires");
     private static final Long TO_SECONDS = 1000L;
-    private static final Long MINUTE = 60000L;
+    // private static final Long DELAY = 120000L;
 
     TextView tvDateTime;
     Button btnPickDate, btnSave;
@@ -55,16 +55,7 @@ public class AddScheduleActivity extends AppCompatActivity {
     private void setupListeners() {
         btnPickDate.setOnClickListener(v -> pickDateTime());
 
-        // btnSave.setOnClickListener(v -> {
-        //     if (finalDateTime.isEmpty()) {
-        //         Toast.makeText(this, "Please select a date and time", Toast.LENGTH_SHORT).show();
-        //     } else {
-        //         ScheduledTime newTime = new ScheduledTime(finalDateTime);
-        //         ScheduleStorage.add(this, newTime);
-        //         Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
-        //         finish(); // Go back to MainActivity
-        //     }
-        // });
+
         btnSave.setOnClickListener(v -> {
             if (finalDateTime.isEmpty()) {
                 Toast.makeText(this, "Please select a date and time", Toast.LENGTH_SHORT).show();
@@ -83,7 +74,7 @@ public class AddScheduleActivity extends AppCompatActivity {
                         .build();
 
                     OneTimeWorkRequest workRequest = new OneTimeWorkRequest.Builder(ScheduleWorker.class)
-                        .setInitialDelay(delay - MINUTE, TimeUnit.MILLISECONDS)
+                        .setInitialDelay(0, TimeUnit.MILLISECONDS)
                         .setInputData(inputData)
                         .build();
 
