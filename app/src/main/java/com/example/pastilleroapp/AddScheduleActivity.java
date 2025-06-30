@@ -26,8 +26,9 @@ import java.util.Calendar;
 public class AddScheduleActivity extends AppCompatActivity {
     private static final  DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final ZoneId zoneId = ZoneId.of("America/Argentina/Buenos_Aires");
-    private static final Long TO_SECONDS = 1000L;
     // private static final Long DELAY = 120000L;
+    private static final Long TO_SECONDS = 1000L;
+    private static final Long MINUTE = 60000L;
 
     TextView tvDateTime;
     Button btnPickDate, btnSave;
@@ -74,7 +75,7 @@ public class AddScheduleActivity extends AppCompatActivity {
                         .build();
 
                     OneTimeWorkRequest workRequest = new OneTimeWorkRequest.Builder(ScheduleWorker.class)
-                        .setInitialDelay(0, TimeUnit.MILLISECONDS)
+                        .setInitialDelay(delay - MINUTE, TimeUnit.MILLISECONDS)
                         .setInputData(inputData)
                         .build();
 
