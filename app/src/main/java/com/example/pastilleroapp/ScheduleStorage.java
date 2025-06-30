@@ -106,7 +106,9 @@ public class ScheduleStorage {
         try {
             JSONArray arr = new JSONArray(json);
             for (int i = 0; i < arr.length(); i++) {
-                result.add(arr.getString(i));
+                JSONArray scheduleTime = arr.getJSONArray(i);
+                String datetime = scheduleTime.getString(0);
+                result.add(datetime);
             }
         } catch (JSONException e) {
             e.printStackTrace();
