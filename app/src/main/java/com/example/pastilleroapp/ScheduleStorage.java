@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+
 public class ScheduleStorage {
     private static final String PREF_NAME = "SchedulesPref";
     private static final String KEY_LIST = "schedule_list";
@@ -71,7 +72,6 @@ public class ScheduleStorage {
         save(context, current);
     }
 
-    // Add to history
     public static void addToHistory(Context context, String dateTime) {
         SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         String json = prefs.getString(KEY_HISTORY, "[]");
@@ -98,7 +98,6 @@ public class ScheduleStorage {
         editor.apply();
     }
 
-    // Load history
     public static List<String> loadHistory(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         String json = prefs.getString(KEY_HISTORY, "[]");

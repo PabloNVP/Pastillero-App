@@ -26,7 +26,7 @@ public class MQTTForegroundService extends Service implements MqttCallback {
     private MqttClient mqttClient;
 
     private static final String BROKER = "tcp://3.19.87.203:1883";
-    private static final String CLIENT_ID = "android_client";
+    private static final String CLIENT_ID = "android_client" + System.currentTimeMillis();
     public static final String USER = "BBUS-ESPZX2ACUxkzX1imwO6uDf35YUa66Y";
     public static final String PASS = "BBUS-ESPZX2ACUxkzX1imwO6uDf35YUa66Y";
 
@@ -65,7 +65,6 @@ public class MQTTForegroundService extends Service implements MqttCallback {
                 Log.i("MQTT", "OK: Conexión establecida correctamente");
             } catch (MqttException e) {
                 Log.e("MQTT", "ERROR: Error al conectar: " + e.getMessage() + " Código: " + e.getReasonCode());
-                e.printStackTrace();
             }
         }).start();
     }
@@ -180,7 +179,6 @@ public class MQTTForegroundService extends Service implements MqttCallback {
                 }
             } catch (MqttException e) {
                 Log.e("MQTT", "Error: Error al publicar: " + e.getMessage() + " Código: " + e.getReasonCode());
-                e.printStackTrace();
             } catch (InterruptedException e) {
                 Log.e("MQTT", "Error en espera: " + e.getMessage());
             }

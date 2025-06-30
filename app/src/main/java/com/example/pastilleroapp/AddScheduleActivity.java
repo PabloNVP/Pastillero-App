@@ -57,7 +57,7 @@ public class AddScheduleActivity extends AppCompatActivity {
 
         btnSave.setOnClickListener(v -> {
             if (finalDateTime.isEmpty()) {
-                Toast.makeText(this, "Please select a date and time", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Por favor, selecciona una fecha y horario.", Toast.LENGTH_SHORT).show();
             } else {
                 LocalDateTime dateTime = LocalDateTime.parse(finalDateTime, FORMATTER);
                 
@@ -85,7 +85,7 @@ public class AddScheduleActivity extends AppCompatActivity {
                     ScheduleStorage.add(this, newTime);
                 }
 
-                Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Horario guardado correctamente.", Toast.LENGTH_SHORT).show();
                 finish();
             }
         });
